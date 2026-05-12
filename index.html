@@ -85,10 +85,9 @@
     #qrcode {
       display: grid;
       place-items: center;
-      width: 100%;
-      min-height: 230px;
+      width: min(288px, 100%);
       margin: 0 auto;
-      padding: 12px;
+      padding: 16px;
       background: #fff;
       overflow: hidden;
     }
@@ -96,18 +95,11 @@
     #qrcode canvas,
     #qrcode img {
       display: block;
-      width: min(210px, 100%) !important;
+      width: 100% !important;
       height: auto;
-      max-width: 210px;
+      max-width: 256px;
       grid-area: 1 / 1;
       margin: 0 auto;
-    }
-
-    .standard-note {
-      margin: 8px 0 0;
-      color: #555;
-      font-size: 12px;
-      line-height: 1.35;
     }
 
     .btn-row {
@@ -136,14 +128,6 @@
 
     button.secondary {
       background: #333;
-    }
-
-    .admin-link {
-      width: 100%;
-      margin-top: 10px;
-      background: transparent;
-      color: #159947;
-      border: 1px solid #159947;
     }
 
     @media (max-width: 420px) {
@@ -175,7 +159,6 @@
       }
 
       .btn-row,
-      .admin-link,
       label,
       select,
       h2 {
@@ -200,19 +183,17 @@
     <div class="result-box">
       <div id="selectedName">กรุณาเลือกรายชื่อ</div>
       <div id="qrcode"></div>
-      <p class="standard-note">มาตรฐาน QR Code สำหรับเครื่องสแกน 2D Barcode</p>
     </div>
 
     <div class="btn-row">
       <button type="button" onclick="downloadQR()">ดาวน์โหลด QR</button>
       <button type="button" class="secondary" onclick="window.print()">พิมพ์</button>
     </div>
-
-    <a class="admin-link" href="admin.html">ไปหน้า Admin</a>
   </div>
 
   <script>
     const DEFAULT_RIDERS = [
+      'Hub J',
       'FKJ_ยุทธนันท์_แสง | Hub J',
       'FKJ_สุทธิรักษ์_ทัพ | Hub J',
       'FKC_มานะ_กลิ่น | Hub J',
@@ -240,13 +221,17 @@
       try {
         const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
         if (Array.isArray(saved) && saved.length > 0) {
-          return saved.map((rider) => rider.qrValue).filter(Boolean);
+          return withHubJ(saved.map((rider) => rider.qrValue).filter(Boolean));
         }
       } catch (error) {
         console.warn('Cannot load admin data:', error);
       }
 
-      return DEFAULT_RIDERS;
+      return withHubJ(DEFAULT_RIDERS);
+    }
+
+    function withHubJ(values) {
+      return values.includes('Hub J') ? values : ['Hub J', ...values];
     }
 
     function renderOptions() {
@@ -273,16 +258,16 @@
 
         new QRCode(qrBox, {
           text: text,
-          width: 210,
-          height: 210,
+          width: 256,
+          height: 256,
           colorDark: '#000000',
           colorLight: '#ffffff',
-          correctLevel: QRCode.CorrectLevel.H
+          correctLevel: QRCode.CorrectLevel.Q
         });
         centerQrImage(qrBox);
       } catch (error) {
         console.warn('Using local QR fallback:', error);
-        qrBox.appendChild(createLocalQRCode(text, 210));
+        qrBox.appendChild(createLocalQRCode(text, 256));
       }
     }
 
@@ -314,7 +299,7 @@
       const source = container.querySelector('canvas, img');
       if (!source) return '';
 
-      const quietZone = 32;
+      const quietZone = 16;
       const sourceWidth = source.width || source.naturalWidth;
       const sourceHeight = source.height || source.naturalHeight;
       const exportCanvas = document.createElement('canvas');
