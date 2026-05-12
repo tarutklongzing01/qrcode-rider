@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin Rider QR 2D Barcode</title>
-  <script src="qrcode.min.js?v=2"></script>
-  <script src="qr-fallback.js?v=2"></script>
+  <script src="qrcode.min.js?v=3"></script>
+  <script src="qr-fallback.js?v=3"></script>
   <style>
     * { box-sizing: border-box; font-family: Tahoma, Arial, sans-serif; }
     body { margin: 0; background: #f4f6f3; color: #17211c; padding: 12px; }
@@ -114,6 +114,11 @@
   <script>
     const DEFAULT_RIDERS = [
       'Hub J',
+      'ENT_J1#DRY',
+      'ENT_J2#DRY',
+      'ENT_J1',
+      'ENT_J2',
+      'ENT_J3',
       'FKJ_ยุทธนันท์_แสง | Hub J',
       'FKJ_สุทธิรักษ์_ทัพ | Hub J',
       'FKC_มานะ_กลิ่น | Hub J',
@@ -169,8 +174,9 @@
     }
 
     function withHubJ(items) {
-      if (items.some((item) => item.qrValue === 'Hub J')) return items;
-      return [parseValue('Hub J'), ...items];
+      const requiredFirst = ['Hub J', 'ENT_J1#DRY', 'ENT_J2#DRY', 'ENT_J1', 'ENT_J2', 'ENT_J3'];
+      const existing = items.filter((item) => !requiredFirst.includes(item.qrValue));
+      return [...requiredFirst.map(parseValue), ...existing];
     }
 
     function saveRiders() {
@@ -323,7 +329,7 @@
         const canvases = Array.from(container.querySelectorAll('canvas'));
 
         if (images.length && canvases.length) {
-          canvases.forEach((canvas) => canvas.remove());
+          images.forEach((image) => image.remove());
         }
       }, 0);
     }
