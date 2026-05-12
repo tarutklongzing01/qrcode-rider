@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QR Code 2D Barcode Rider</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="qr-fallback.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: Tahoma, Arial, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #f2f4f7;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 14px;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 460px;
+      background: #ffffff;
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+      text-align: center;
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      color: #222;
+      font-size: 22px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      text-align: left;
+      font-weight: bold;
+      color: #333;
+    }
+
+    select {
+      width: 100%;
+      min-height: 48px;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+      outline: none;
+      margin-bottom: 14px;
+      background: #fff;
+    }
+
+    select:focus {
+      border-color: #159947;
+      box-shadow: 0 0 0 3px rgba(21, 153, 71, 0.15);
+    }
+
+    .result-box {
+      border: 2px dashed #159947;
+      border-radius: 14px;
+      padding: 14px;
+      background: #f8fff9;
+    }
+
+    #selectedName {
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      font-weight: bold;
+      margin-bottom: 12px;
+      color: #111;
+      word-break: break-word;
+    }
+
+    #qrcode {
+      display: grid;
+      place-items: center;
+      width: 100%;
+      min-height: 230px;
+      margin: 0 auto;
+      padding: 12px;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    #qrcode canvas,
+    #qrcode img {
+      display: block;
+      width: min(210px, 100%) !important;
+      height: auto;
+      max-width: 210px;
+      grid-area: 1 / 1;
+      margin: 0 auto;
+    }
+
+    .standard-note {
+      margin: 8px 0 0;
+      color: #555;
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    button,
+    .admin-link {
+      flex: 1;
+      min-height: 46px;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      background: #159947;
+      color: #fff;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    button.secondary {
+      background: #333;
+    }
+
+    .admin-link {
+      width: 100%;
+      margin-top: 10px;
+      background: transparent;
+      color: #159947;
+      border: 1px solid #159947;
+    }
+
+    @media (max-width: 420px) {
+      body {
+        align-items: flex-start;
+      }
+
+      .card {
+        padding: 14px;
+      }
+
+      h2 {
+        font-size: 20px;
+      }
+
+      .btn-row {
+        flex-direction: column;
+      }
+    }
+
+    @media print {
+      body {
+        background: #fff;
+        padding: 0;
+      }
+
+      .card {
+        box-shadow: none;
+      }
+
+      .btn-row,
+      .admin-link,
+      label,
+      select,
+      h2 {
+        display: none;
+      }
+
+      .result-box {
+        border: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>QR Code 2D Barcode</h2>
+
+    <label for="nameSelect">เลือกรายชื่อ</label>
+    <select id="nameSelect">
+      <option value="">-- เลือกรายชื่อ --</option>
+    </select>
+
+    <div class="result-box">
+      <div id="selectedName">กรุณาเลือกรายชื่อ</div>
+      <div id="qrcode"></div>
+      <p class="standard-note">มาตรฐาน QR Code สำหรับเครื่องสแกน 2D Barcode</p>
+    </div>
+
+    <div class="btn-row">
+      <button type="button" onclick="downloadQR()">ดาวน์โหลด QR</button>
+      <button type="button" class="secondary" onclick="window.print()">พิมพ์</button>
+    </div>
+
+    <a class="admin-link" href="admin.html">ไปหน้า Admin</a>
+  </div>
+
+  <script>
+    const DEFAULT_RIDERS = [
+      'FKJ_ยุทธนันท์_แสง | Hub J',
+      'FKJ_สุทธิรักษ์_ทัพ | Hub J',
+      'FKC_มานะ_กลิ่น | Hub J',
+      'FKJ_ฟัยซอล_เจริญ | Hub J',
+      'FKJ_อัลคุดรีย_อาแว | Hub J',
+      'FKT_อรรคเดช_ณ | Hub J',
+      'FKT_ประกิจ_ส | Hub J',
+      'FKT_ดุสิต_สุข | Hub J',
+      'FKT_ศรชัย_จุลฑา | Hub J',
+      'FKT_โรเบิร์ต_แบรนด์ | Hub J',
+      'FKJ_ณัฐพงษ์_เทียม | Hub J',
+      'FKT_วันชาติ_เวช | Hub J',
+      'FKT_ธนาวุฒิ_แข็ง | Hub J',
+      'FKT_อาทิตย์_นันท์ | Hub J',
+      'FKT_ไกรลาศ_บุษ | Hub J',
+      'FKT_พิทวัส_แก้ว | Hub J'
+    ];
+
+    const STORAGE_KEY = 'qr-rider-admin-data';
+    const nameSelect = document.getElementById('nameSelect');
+    const selectedName = document.getElementById('selectedName');
+    const qrBox = document.getElementById('qrcode');
+
+    function loadValues() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        if (Array.isArray(saved) && saved.length > 0) {
+          return saved.map((rider) => rider.qrValue).filter(Boolean);
+        }
+      } catch (error) {
+        console.warn('Cannot load admin data:', error);
+      }
+
+      return DEFAULT_RIDERS;
+    }
+
+    function renderOptions() {
+      loadValues().forEach((value) => {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = value;
+        nameSelect.appendChild(option);
+      });
+    }
+
+    function generateQR(text) {
+      qrBox.innerHTML = '';
+
+      if (!text) {
+        selectedName.textContent = 'กรุณาเลือกรายชื่อ';
+        return;
+      }
+
+      selectedName.textContent = text;
+
+      try {
+        if (!window.QRCode) throw new Error('QRCode library was not loaded.');
+
+        new QRCode(qrBox, {
+          text: text,
+          width: 210,
+          height: 210,
+          colorDark: '#000000',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.H
+        });
+        centerQrImage(qrBox);
+      } catch (error) {
+        console.warn('Using local QR fallback:', error);
+        qrBox.appendChild(createLocalQRCode(text, 210));
+      }
+    }
+
+    nameSelect.addEventListener('change', function () {
+      generateQR(this.value);
+    });
+
+    function downloadQR() {
+      const text = nameSelect.value;
+      if (!text) {
+        alert('กรุณาเลือกรายชื่อก่อน');
+        return;
+      }
+
+      const dataUrl = getQrDownloadDataUrl(qrBox);
+
+      if (!dataUrl) {
+        alert('ยังไม่มี QR Code ให้ดาวน์โหลด');
+        return;
+      }
+
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = text.replace(/[\\/:*?"<>|]/g, '_') + '.png';
+      a.click();
+    }
+
+    function getQrDownloadDataUrl(container) {
+      const source = container.querySelector('canvas, img');
+      if (!source) return '';
+
+      const quietZone = 32;
+      const sourceWidth = source.width || source.naturalWidth;
+      const sourceHeight = source.height || source.naturalHeight;
+      const exportCanvas = document.createElement('canvas');
+      exportCanvas.width = sourceWidth + quietZone * 2;
+      exportCanvas.height = sourceHeight + quietZone * 2;
+
+      const ctx = exportCanvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+      ctx.drawImage(source, quietZone, quietZone, sourceWidth, sourceHeight);
+      return exportCanvas.toDataURL('image/png');
+    }
+
+    function centerQrImage(container) {
+      window.setTimeout(() => {
+        const images = Array.from(container.querySelectorAll('img'));
+        const canvases = Array.from(container.querySelectorAll('canvas'));
+
+        if (images.length && canvases.length) {
+          canvases.forEach((canvas) => canvas.remove());
+        }
+      }, 0);
+    }
+
+    renderOptions();
+  </script>
+</body>
+</html>
