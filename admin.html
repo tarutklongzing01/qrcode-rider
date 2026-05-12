@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Rider QR 2D Barcode</title>
+  <script src="qrcode.min.js?v=3"></script>
+  <script src="qr-fallback.js?v=3"></script>
+  <style>
+    * { box-sizing: border-box; font-family: Tahoma, Arial, sans-serif; }
+    body { margin: 0; background: #f4f6f3; color: #17211c; padding: 12px; }
+    .shell { width: min(760px, 100%); margin: 0 auto; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+    h1 { font-size: 24px; margin: 0; }
+    a { color: #159947; font-weight: 700; text-decoration: none; }
+    .panel { background: #fff; border: 1px solid #dce3df; border-radius: 10px; padding: 14px; margin-bottom: 12px; box-shadow: 0 8px 22px rgba(0,0,0,.08); }
+    h2 { font-size: 18px; margin: 0 0 12px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .field { display: grid; gap: 6px; margin-bottom: 10px; }
+    label { font-size: 13px; font-weight: 700; color: #5d6962; }
+    input, select { width: 100%; min-height: 46px; border: 1px solid #cfd8d3; border-radius: 8px; padding: 10px; font-size: 16px; background: #fff; }
+    input:focus, select:focus { outline: none; border-color: #159947; box-shadow: 0 0 0 3px rgba(21,153,71,.14); }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    button { min-height: 44px; border: 0; border-radius: 8px; padding: 10px 12px; background: #159947; color: #fff; font-weight: 700; font-size: 15px; }
+    button.secondary { background: #333; }
+    button.warning { background: #d7951b; color: #271b04; }
+    button.danger { background: #b42318; }
+    button.ghost { background: transparent; color: #159947; border: 1px solid #159947; }
+    .qr-card { text-align: center; }
+    #selectedName { min-height: 42px; display: flex; align-items: center; justify-content: center; font-weight: 800; word-break: break-word; margin-bottom: 10px; }
+    #qrcode { width: min(288px, 100%); margin: 0 auto; padding: 16px; display: grid; place-items: center; background: #fff; overflow: hidden; }
+    #qrcode canvas, #qrcode img { display: block; width: 100% !important; max-width: 256px; height: auto; grid-area: 1 / 1; margin: 0 auto; }
+    .list { display: grid; gap: 8px; }
+    .item { border: 1px solid #dce3df; border-radius: 8px; padding: 10px; background: #fff; }
+    .item strong { display: block; margin-bottom: 3px; word-break: break-word; }
+    .item small { display: block; color: #637069; margin-bottom: 8px; word-break: break-word; }
+    .item .actions button { min-height: 36px; font-size: 13px; padding: 7px 9px; }
+    @media (max-width: 520px) {
+      body { padding: 10px; }
+      .topbar { align-items: flex-start; flex-direction: column; }
+      .grid { grid-template-columns: 1fr; gap: 0; }
+      .actions button { flex: 1; }
+      h1 { font-size: 22px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <h1>Admin Rider QR 2D</h1>
+      <a href="index.html">กลับหน้า QR</a>
+    </header>
+
+    <section class="panel">
+      <h2 id="formTitle">เพิ่มข้อมูล</h2>
+      <form id="riderForm">
+        <input type="hidden" id="editId" />
+        <div class="grid">
+          <div class="field">
+            <label for="riderCode">รหัส</label>
+            <input id="riderCode" placeholder="เช่น FKT" required />
+          </div>
+          <div class="field">
+            <label for="riderHub">Hub</label>
+            <input id="riderHub" placeholder="เช่น Hub J" required />
+          </div>
+        </div>
+        <div class="grid">
+          <div class="field">
+            <label for="firstName">ชื่อ</label>
+            <input id="firstName" required />
+          </div>
+          <div class="field">
+            <label for="lastName">นามสกุล/คำท้าย</label>
+            <input id="lastName" required />
+          </div>
+        </div>
+        <div class="field">
+          <label for="qrValue">ข้อความใน QR</label>
+          <input id="qrValue" placeholder="ถ้าไม่กรอก ระบบจะสร้างจากข้อมูลด้านบน" />
+        </div>
+        <div class="actions">
+          <button id="saveBtn" type="submit">บันทึก</button>
+          <button class="ghost" id="clearBtn" type="button">ล้างฟอร์ม</button>
+          <button class="danger" id="resetBtn" type="button">รีเซ็ตข้อมูล</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel qr-card">
+      <h2>สร้าง QR Code 2D Barcode</h2>
+      <div class="field">
+        <label for="nameSelect">เลือกรายชื่อ</label>
+        <select id="nameSelect"></select>
+      </div>
+      <div id="selectedName">กรุณาเลือกรายชื่อ</div>
+      <div id="qrcode"></div>
+      <div class="actions">
+        <button id="downloadBtn" type="button">ดาวน์โหลด QR</button>
+        <button class="secondary" type="button" onclick="window.print()">พิมพ์</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>รายการข้อมูล <span id="countText"></span></h2>
+      <div class="field">
+        <label for="searchBox">ค้นหา</label>
+        <input id="searchBox" type="search" placeholder="ค้นหาชื่อ รหัส หรือ Hub" />
+      </div>
+      <div class="list" id="riderList"></div>
+    </section>
+  </main>
+
+  <script>
+    const DEFAULT_RIDERS = [
+      'Hub J',
+      'ENT_J1#DRY',
+      'ENT_J2#DRY',
+      'ENT_J1',
+      'ENT_J2',
+      'ENT_J3',
+      'FKJ_ยุทธนันท์_แสง | Hub J',
+      'FKJ_สุทธิรักษ์_ทัพ | Hub J',
+      'FKC_มานะ_กลิ่น | Hub J',
+      'FKJ_ฟัยซอล_เจริญ | Hub J',
+      'FKJ_อัลคุดรีย_อาแว | Hub J',
+      'FKT_อรรคเดช_ณ | Hub J',
+      'FKT_ประกิจ_ส | Hub J',
+      'FKT_ดุสิต_สุข | Hub J',
+      'FKT_ศรชัย_จุลฑา | Hub J',
+      'FKT_โรเบิร์ต_แบรนด์ | Hub J',
+      'FKJ_ณัฐพงษ์_เทียม | Hub J',
+      'FKT_วันชาติ_เวช | Hub J',
+      'FKT_ธนาวุฒิ_แข็ง | Hub J',
+      'FKT_อาทิตย์_นันท์ | Hub J',
+      'FKT_ไกรลาศ_บุษ | Hub J',
+      'FKT_พิทวัส_แก้ว | Hub J'
+    ];
+
+    const STORAGE_KEY = 'qr-rider-admin-data';
+    let riders = loadRiders();
+
+    const form = document.getElementById('riderForm');
+    const editId = document.getElementById('editId');
+    const riderCode = document.getElementById('riderCode');
+    const riderHub = document.getElementById('riderHub');
+    const firstName = document.getElementById('firstName');
+    const lastName = document.getElementById('lastName');
+    const qrValue = document.getElementById('qrValue');
+    const nameSelect = document.getElementById('nameSelect');
+    const selectedName = document.getElementById('selectedName');
+    const qrBox = document.getElementById('qrcode');
+    const riderList = document.getElementById('riderList');
+    const searchBox = document.getElementById('searchBox');
+
+    function makeId() {
+      return 'rider-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+    }
+
+    function parseValue(value) {
+      const [namePart, hub = 'Hub J'] = value.split('|').map((part) => part.trim());
+      const parts = namePart.split('_');
+      return { id: makeId(), code: parts[0] || '', firstName: parts[1] || '', lastName: parts.slice(2).join('_'), hub, qrValue: value };
+    }
+
+    function loadRiders() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        if (Array.isArray(saved) && saved.length > 0) return withHubJ(saved);
+      } catch (error) {
+        console.warn('Cannot load data:', error);
+      }
+      return withHubJ(DEFAULT_RIDERS.map(parseValue));
+    }
+
+    function withHubJ(items) {
+      const requiredFirst = ['Hub J', 'ENT_J1#DRY', 'ENT_J2#DRY', 'ENT_J1', 'ENT_J2', 'ENT_J3'];
+      const existing = items.filter((item) => !requiredFirst.includes(item.qrValue));
+      return [...requiredFirst.map(parseValue), ...existing];
+    }
+
+    function saveRiders() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(riders));
+    }
+
+    function buildQrValue() {
+      return qrValue.value.trim() || `${riderCode.value.trim()}_${firstName.value.trim()}_${lastName.value.trim()} | ${riderHub.value.trim()}`;
+    }
+
+    function render() {
+      saveRiders();
+      renderSelect();
+      renderList();
+      document.getElementById('countText').textContent = `(${riders.length})`;
+    }
+
+    function renderSelect() {
+      const current = nameSelect.value;
+      nameSelect.innerHTML = '<option value="">-- เลือกรายชื่อ --</option>';
+      riders.forEach((rider) => {
+        const option = document.createElement('option');
+        option.value = rider.id;
+        option.textContent = rider.qrValue;
+        nameSelect.appendChild(option);
+      });
+      if (riders.some((rider) => rider.id === current)) nameSelect.value = current;
+    }
+
+    function renderList() {
+      const keyword = searchBox.value.trim().toLowerCase();
+      const filtered = riders.filter((rider) => [rider.code, rider.firstName, rider.lastName, rider.hub, rider.qrValue].join(' ').toLowerCase().includes(keyword));
+      riderList.innerHTML = filtered.length ? '' : '<div class="item">ไม่พบข้อมูล</div>';
+      filtered.forEach((rider) => {
+        const item = document.createElement('div');
+        item.className = 'item';
+        item.innerHTML = `
+          <strong>${escapeHtml(rider.qrValue)}</strong>
+          <small>${escapeHtml(rider.code)} · ${escapeHtml(rider.hub)}</small>
+          <div class="actions">
+            <button type="button" data-action="qr" data-id="${rider.id}">QR</button>
+            <button class="warning" type="button" data-action="edit" data-id="${rider.id}">แก้ไข</button>
+            <button class="danger" type="button" data-action="delete" data-id="${rider.id}">ลบ</button>
+          </div>`;
+        riderList.appendChild(item);
+      });
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
+    }
+
+    function generateQR(id) {
+      qrBox.innerHTML = '';
+      const rider = riders.find((item) => item.id === id);
+      if (!rider) {
+        selectedName.textContent = 'กรุณาเลือกรายชื่อ';
+        return;
+      }
+      selectedName.textContent = rider.qrValue;
+      try {
+        if (!window.QRCode) throw new Error('QRCode library was not loaded.');
+        new QRCode(qrBox, { text: rider.qrValue, width: 256, height: 256, colorDark: '#000', colorLight: '#fff', correctLevel: QRCode.CorrectLevel.Q });
+        centerQrImage(qrBox);
+      } catch (error) {
+        qrBox.appendChild(createLocalQRCode(rider.qrValue, 256));
+      }
+    }
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const data = { id: editId.value || makeId(), code: riderCode.value.trim(), firstName: firstName.value.trim(), lastName: lastName.value.trim(), hub: riderHub.value.trim(), qrValue: buildQrValue() };
+      riders = editId.value ? riders.map((rider) => rider.id === editId.value ? data : rider) : [...riders, data];
+      resetForm();
+      render();
+      nameSelect.value = data.id;
+      generateQR(data.id);
+    });
+
+    function resetForm() {
+      form.reset();
+      editId.value = '';
+      document.getElementById('formTitle').textContent = 'เพิ่มข้อมูล';
+      document.getElementById('saveBtn').textContent = 'บันทึก';
+    }
+
+    document.getElementById('clearBtn').addEventListener('click', resetForm);
+    searchBox.addEventListener('input', renderList);
+    nameSelect.addEventListener('change', () => generateQR(nameSelect.value));
+
+    riderList.addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-action]');
+      if (!button) return;
+      const rider = riders.find((item) => item.id === button.dataset.id);
+      if (!rider) return;
+      if (button.dataset.action === 'qr') {
+        nameSelect.value = rider.id;
+        generateQR(rider.id);
+      }
+      if (button.dataset.action === 'edit') {
+        editId.value = rider.id;
+        riderCode.value = rider.code;
+        firstName.value = rider.firstName;
+        lastName.value = rider.lastName;
+        riderHub.value = rider.hub;
+        qrValue.value = rider.qrValue;
+        document.getElementById('formTitle').textContent = 'แก้ไขข้อมูล';
+        document.getElementById('saveBtn').textContent = 'บันทึกแก้ไข';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+      if (button.dataset.action === 'delete' && confirm('ต้องการลบรายชื่อนี้ใช่ไหม?')) {
+        riders = riders.filter((item) => item.id !== rider.id);
+        render();
+        if (nameSelect.value === rider.id) generateQR('');
+      }
+    });
+
+    document.getElementById('downloadBtn').addEventListener('click', () => {
+      const rider = riders.find((item) => item.id === nameSelect.value);
+      if (!rider) return alert('กรุณาเลือกรายชื่อก่อน');
+      const dataUrl = getQrDownloadDataUrl(qrBox);
+      if (!dataUrl) return alert('ยังไม่มี QR Code ให้ดาวน์โหลด');
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = rider.qrValue.replace(/[\\/:*?"<>|]/g, '_') + '.png';
+      a.click();
+    });
+
+    function getQrDownloadDataUrl(container) {
+      const source = container.querySelector('canvas, img');
+      if (!source) return '';
+
+      const quietZone = 16;
+      const sourceWidth = source.width || source.naturalWidth;
+      const sourceHeight = source.height || source.naturalHeight;
+      const exportCanvas = document.createElement('canvas');
+      exportCanvas.width = sourceWidth + quietZone * 2;
+      exportCanvas.height = sourceHeight + quietZone * 2;
+
+      const ctx = exportCanvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+      ctx.drawImage(source, quietZone, quietZone, sourceWidth, sourceHeight);
+      return exportCanvas.toDataURL('image/png');
+    }
+
+    function centerQrImage(container) {
+      window.setTimeout(() => {
+        const images = Array.from(container.querySelectorAll('img'));
+        const canvases = Array.from(container.querySelectorAll('canvas'));
+
+        if (images.length && canvases.length) {
+          images.forEach((image) => image.remove());
+        }
+      }, 0);
+    }
+
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      if (!confirm('รีเซ็ตข้อมูลกลับเป็นค่าเริ่มต้นใช่ไหม?')) return;
+      localStorage.removeItem(STORAGE_KEY);
+      riders = DEFAULT_RIDERS.map(parseValue);
+      resetForm();
+      generateQR('');
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>
